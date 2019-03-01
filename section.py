@@ -4,4 +4,4 @@ class Section:
     
     def __init__(self, start, end):
         self.start_point = start
-        self_end_point = end
+        self.end_point = end
