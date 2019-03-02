@@ -1,9 +1,52 @@
 from bresenham import Bresenham
 from point import Point
+from radon_transform import RadonTransform
+from tomograph import Tomograph
+import matplotlib.pyplot as plt
+from skimage import color
+from skimage import io
+import numpy as np
+from skimage.transform import resize
 
-x = Bresenham()
-start_point = Point(1, 0)
-end_point = Point(2, 3)
-result = x.get_points(start_point, end_point)
-for point in result:
-    print('X: ' + str(point.x) + '  Y: ' + str(point.y))
+img = color.rgb2gray(io.imread('image.png'))
+arr = np.asarray(img)
+plt.imshow(arr, cmap='gray')
+plt.show()
+print(arr.shape)
+
+# x = Bresenham()
+# start_point = Point(1, 0)
+# end_point = Point(2, 3)
+# result = x.get_points(start_point, end_point)
+
+# for point in result:
+#     print('X: ' + str(point.x) + '  Y: ' + str(point.y))
+#
+
+n = 400
+alpha = 0.7
+tomograph = Tomograph(alpha, n, 90, arr.shape[0], arr.shape[1])
+
+x = []
+y = []
+for i in range(0, 360):
+    for d in range(0, 3):
+        wynik = tomograph.get_ray(i, d)
+        x.append(wynik.end_point.x)
+        y.append(wynik.end_point.y)
+
+plt.plot(x, y, 'ro')
+plt.show()
+
+sinogram = RadonTransform().transform(arr, tomograph)
+
+arr2 = np.asarray(sinogram)
+arr2 = np.transpose(arr2)
+image = resize(arr2, (100, 200))
+plt.imshow(image, cmap='gray')
+plt.show()
+
+result = RadonTransform().inverse_transform(sinogram, tomograph)
+plt.imshow(result, cmap='gray')
+plt.show()
+

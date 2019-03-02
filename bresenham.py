@@ -18,6 +18,7 @@ class Bresenham:
         self.__y_direction, self.__dy = self.__get_draw_direction(point1.y, point2.y)
 
     def __run_algorithm(self, start_point, end_point):
+        self.__result=[]
         x = start_point.x
         y = start_point.y
 
@@ -48,7 +49,7 @@ class Bresenham:
         if val1 < val2:
             return 1, val2 - val1
         else:
-            return 1, val1 - val2
+            return -1, val1 - val2
 
     def __is_leading_axis(self, val1, val2):
         return val1 > val2
