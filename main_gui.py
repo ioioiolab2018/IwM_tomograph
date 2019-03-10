@@ -2,11 +2,19 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from PIL import ImageTk, Image
+from matplotlib import cm
+
+from god import God
+from skimage import color
+import matplotlib.pyplot as plt
+from skimage.transform import resize
+import numpy as np
 
 
 class Application(tk.Frame):
 
     def __init__(self, master=None):
+
         super().__init__(master)
         master.title("Tomograph")
         master.resizable(width=True, height=True)
@@ -20,7 +28,7 @@ class Application(tk.Frame):
         self.is_iterative = tk.IntVar()
         self.progress = tk.IntVar()
 
-        self.filename = "Kropka.jpg"
+        self.filename = "Paski2.jpg"
 
         self.run_button = tk.Button(self)
         self.run_inverse_button = tk.Button(self, state=tk.DISABLED)
@@ -39,6 +47,26 @@ class Application(tk.Frame):
         self.res = None
         self.create_widgets()
         self.pack()
+        self.create_god()
+
+    def create_god(self):
+        alpha = 3
+        n = 100
+        arc_len = 180
+        try:
+            alpha = float(self.alpha_entry.get())
+        except:
+            print("zły format alpha")
+        try:
+            n = int(self.detectorc_no_entry.get())
+        except:
+            print("zły format alpha")
+        try:
+            arc_len = int(self.arc_length_entry.get())
+        except:
+            print("zły format alpha")
+
+        self.god = God(self.filename, n, alpha, arc_len)
 
     def create_widgets(self):
         # Start  transform button
@@ -77,15 +105,17 @@ class Application(tk.Frame):
 
         # Sliders
         self.transform_slider.grid(row=4, column=0, columnspan=3)
+        self.transform_slider.bind("<ButtonRelease-1>", self.run_transform)
         self.inverse_slider.grid(row=5, column=0, columnspan=3)
 
         # Start image
-
         self.show_image()
         self.image.grid(row=6, column=0, columnspan=3)
 
+        self.sinogram.grid(row=6, column=4, sticky=tk.N)
+
         # Quit button
-        self.quit.grid(row=7, column=0, stick=tk.E)
+        self.quit.grid(row=7, column=0, sticky=tk.E)
 
     def show_image(self):
         image = Image.open(self.filename)
@@ -93,11 +123,9 @@ class Application(tk.Frame):
         self.image.configure(image=self.img)
 
     def show_sinogram(self, sinogram):
-        # TODO
-        print("")
-        # image = Image.fromarray(np.uint8(cm.gist_earth(sinogram)*255))
-        # self.img = ImageTk.PhotoImage(image)
-        # self.image.configure(image=self.img)
+        image = Image.fromarray(np.asarray(sinogram) * 255)
+        self.sin = ImageTk.PhotoImage(image)
+        self.sinogram.configure(image=self.sin)
 
     def show_result(self, sinogram):
         # TODO
@@ -117,14 +145,20 @@ class Application(tk.Frame):
             self.transform_slider.grid(row=4, column=0, columnspan=3)
             self.inverse_slider.grid(row=5, column=0, columnspan=3)
 
-    def run_transform(self):
-        for i in range(9999):
-            self.progress.set((i / 9999) * 100)
-            a = 99999 / 190.99
-            self.master.update()
-        if self.is_filter.get() == 1:
-            print("Filtrowanie")
-        print("Radon transform!")
+    def run_transform(self, __=0):
+        end = self.god.iteration_no
+        if self.is_iterative.get() == 0:
+            end = int(((self.transform_slider.get()) / 100) * self.god.iteration_no)
+
+        for i in range(end):
+            self.progress.set((i / end) * 100)
+            result = self.god.get_sinogram(i)
+            if i % 3 == 0:
+                arr2 = np.transpose(result)
+                image = resize(arr2, (300, 500))
+                self.show_sinogram(image)
+                self.master.update()
+
         self.run_inverse_button.config(state="normal")
 
     def run_inverse(self):
@@ -134,6 +168,7 @@ class Application(tk.Frame):
         self.filename = filedialog.askopenfilename(initialdir="./", title="Select file",
                                                    filetypes=(("jpeg files", "*.jpg"), ("png files", "*.png")))
         self.show_image()
+        self.create_god()
 
 
 root = tk.Tk()
