@@ -6,7 +6,7 @@ import numpy as np
 
 class InverseRadonTransform:
     def transform(self, sinogram, tomograph: Tomograph):
-        image_size = (tomograph.width, tomograph.height)
+        image_size = (tomograph.image_width, tomograph.image_height)
         image = np.zeros(image_size)
         lines_quantity_per_pixel = np.zeros(image_size)
 
@@ -22,8 +22,8 @@ class InverseRadonTransform:
                            tomograph: Tomograph, vector_number: int):
         for detector_number in range(0, detectors_quantity):
             section = tomograph.get_ray(vector_number, detector_number)
-            image_points = Bresenham().get_image_points(section.start_point, section.end_point, tomograph.width,
-                                                        tomograph.height)
+            image_points = Bresenham().get_image_points(section.start_point, section.end_point, tomograph.image_width,
+                                                        tomograph.image_height)
             self.__transform_value(image, lines_quantity_per_pixel, image_points,
                                    sinogram[vector_number][detector_number])
 

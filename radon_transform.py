@@ -7,7 +7,7 @@ import math
 
 class RadonTransform:
     def transform(self, image, tomograph: Tomograph):
-        iteration_no = math.floor(360 / tomograph.dAlpha)
+        iteration_no = math.floor(360 / tomograph.shifting_angle)
         sinogram = []
         for position_number in range(0, iteration_no):
             sinogram_vector = self.get_singoram_vector(image, tomograph, position_number)
@@ -16,7 +16,7 @@ class RadonTransform:
 
     def get_singoram_vector(self, image, tomograph: Tomograph, position_number):
         sinogram_vector = []
-        for j in range(0, tomograph.n):
+        for j in range(0, tomograph.detectors_quantity):
             section = tomograph.get_ray(position_number, j)
             sinogram_vector.append(self.get_sinogram_value(image, section))
         return sinogram_vector
