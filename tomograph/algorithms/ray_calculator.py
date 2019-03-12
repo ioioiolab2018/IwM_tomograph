@@ -1,9 +1,8 @@
-from section import Section
-from point import Point
+from tomograph import Point, Section
 from math import *
 
 
-class Tomograph:
+class RayCalculator:
     image_height = None
     image_width = None
     detectors_quantity = None

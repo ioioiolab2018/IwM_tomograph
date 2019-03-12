@@ -1,15 +1,9 @@
-from bresenham import Bresenham
-from point import Point
-from radon_transform import RadonTransform
-from inverse_radon_transform import InverseRadonTransform
-from convolution import Convolution
-from tomograph import Tomograph
+from tomograph import *
 import matplotlib.pyplot as plt
 from skimage import color
 from skimage import io
 import numpy as np
 from skimage.transform import resize
-from dicom_saver import DICOMSaver
 
 img = color.rgb2gray(io.imread('images/image.png'))
 arr = np.asarray(img)
@@ -30,9 +24,9 @@ print(arr.shape)
 # alpha = 0.7
 # tomograph = Tomograph(alpha, n, 90, arr.shape[0], arr.shape[1])
 
-n = 300
-alpha = 0.5
-tomograph = Tomograph(arr.shape[0], arr.shape[1], n, alpha, 300)
+n = 100
+alpha = 2
+tomograph = RayCalculator(arr.shape[0], arr.shape[1], n, alpha, 300)
 
 # x = []
 # y = []
