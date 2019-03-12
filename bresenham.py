@@ -7,18 +7,18 @@ class Bresenham:
     __y_direction = 0
     __result = []
 
-    def get_points(self, start_point, end_point):
+    def get_image_points(self, start_point: Point, end_point: Point, image_width: int, image_height: int):
         self.__set_draw_direction(start_point, end_point)
-        self.__result.append(Point(start_point.x, start_point.y))
-        self.__run_algorithm(start_point, end_point)
+        self.__result = []
+        self.__append_point(Point(start_point.x, start_point.y), image_width, image_height)
+        self.__run_algorithm(start_point, end_point, image_width, image_height)
         return self.__result
 
-    def __set_draw_direction(self, point1, point2):
+    def __set_draw_direction(self, point1: Point, point2: Point):
         self.__x_direction, self.__dx = self.__get_draw_direction(point1.x, point2.x)
         self.__y_direction, self.__dy = self.__get_draw_direction(point1.y, point2.y)
 
-    def __run_algorithm(self, start_point, end_point):
-        self.__result=[]
+    def __run_algorithm(self, start_point: Point, end_point: Point, image_width: int, image_height: int):
         x = start_point.x
         y = start_point.y
 
@@ -32,7 +32,7 @@ class Bresenham:
                 else:
                     d += bi
                     x += self.__x_direction
-                self.__result.append(Point(x, y))
+                self.__append_point(Point(x, y), image_width, image_height)
         else:
             ai, bi, d = self.__get_parameters(self.__dx, self.__dy)
             while y != end_point.y:
@@ -43,7 +43,7 @@ class Bresenham:
                 else:
                     d += bi
                     y += self.__y_direction
-                self.__result.append(Point(x, y))
+                self.__append_point(Point(x, y), image_width, image_height)
 
     def __get_draw_direction(self, val1, val2):
         if val1 < val2:
@@ -59,3 +59,10 @@ class Bresenham:
         bi = d1 * 2
         d = bi - d2
         return ai, bi, d
+
+    def __append_point(self, point: Point, image_width, image_height):
+        if self.__is_in_image(point, image_width, image_height):
+            self.__result.append(point)
+
+    def __is_in_image(self, point, image_width, image_height):
+        return 0 <= point.x < image_width and 0 < point.y < image_height
