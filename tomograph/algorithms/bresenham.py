@@ -1,4 +1,4 @@
-from point import Point
+from tomograph import Point
 
 
 class Bresenham:

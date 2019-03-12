@@ -1,4 +1,4 @@
-from point import Point
+from tomograph.utils.point import Point
 class Section:
     start_point = None
     end_point = None
