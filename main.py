@@ -9,6 +9,7 @@ from skimage import color
 from skimage import io
 import numpy as np
 from skimage.transform import resize
+from dicom_saver import DICOMSaver
 
 img = color.rgb2gray(io.imread('image.png'))
 arr = np.asarray(img)
@@ -54,5 +55,6 @@ plt.imshow(image, cmap='gray')
 plt.show()
 
 result = InverseRadonTransform().transform(sinogram, tomograph)
+DICOMSaver().save(result, 'TEST')
 plt.imshow(result, cmap='gray')
 plt.show()
