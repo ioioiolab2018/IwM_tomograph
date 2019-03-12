@@ -36,7 +36,7 @@ class Application(tk.Frame):
         self.is_iterative = tk.IntVar()
         self.progress = tk.IntVar()
 
-        self.filename = "Paski2.jpg"
+        self.filename = "images/Paski2.jpg"
 
         self.run_button = tk.Button(self)
         self.run_inverse_button = tk.Button(self, state=tk.DISABLED)

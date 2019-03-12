@@ -11,7 +11,7 @@ import numpy as np
 from skimage.transform import resize
 from dicom_saver import DICOMSaver
 
-img = color.rgb2gray(io.imread('image.png'))
+img = color.rgb2gray(io.imread('images/image.png'))
 arr = np.asarray(img)
 plt.imshow(arr, cmap='gray')
 plt.show()
