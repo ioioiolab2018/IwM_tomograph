@@ -49,6 +49,6 @@ plt.imshow(image, cmap='gray')
 plt.show()
 
 result = InverseRadonTransform().transform(sinogram, tomograph)
-DICOMSaver().save(result, 'TEST')
+DICOMSaver().save(result, 'pretty')
 plt.imshow(result, cmap='gray')
 plt.show()
