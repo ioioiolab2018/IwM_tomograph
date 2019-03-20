@@ -1,4 +1,4 @@
-from tomograph import InverseRadonTransform, RadonTransform, RayCalculator
+from tomograph import InverseRadonTransform, RadonTransform, RayCalculator, Convolution
 from skimage import color, io, img_as_float32, img_as_ubyte
 import math
 
@@ -8,6 +8,7 @@ class God:
     sinogram_n = None
     iteration_no = None
     sinogram = None
+    filtered_sinogram = None
     image = None
     zeros = None
     radon = None
@@ -29,6 +30,7 @@ class God:
         self.result_n = -1
         self.sinogram_n = -1
         self.sinogram = []
+        self.filtered_sinogram = None
         self.zeros = []
         for i in range(n):
             self.zeros.append(0)
@@ -39,6 +41,7 @@ class God:
         self.result_n = 0
 
     def set_filtering(self, filtering: bool):
+        print("###########", filtering)
         self.is_filtering = filtering
         self.restart_result()
 
@@ -54,9 +57,23 @@ class God:
             result.append(self.zeros)
         return result
 
+    def filterImage(self, sinogram, mask=None):
+        return Convolution().transform(sinogram, mask)
+
     def get_inverse_result(self, progres: int):
+
         if self.sinogram_n < progres:
             self.get_sinogram(progres)
+
+        sinogram_copy = None
+
+        if self.is_filtering:
+            if self.filtered_sinogram is None:
+                self.filtered_sinogram = self.filterImage(self.sinogram.copy())
+            sinogram_copy = self.filtered_sinogram
+        else:
+            sinogram_copy = self.sinogram.copy()
+
         partial_result = None
         is_done = False
         for result in self.results:
@@ -69,10 +86,10 @@ class God:
             return InverseRadonTransform().normalize_image(partial_result[1], partial_result[2])
         else:
             if partial_result is None:
-                image, counter = InverseRadonTransform().get_partial_result(self.sinogram, self.tomograph,
+                image, counter = InverseRadonTransform().get_partial_result(sinogram_copy, self.tomograph,
                                                                             progres)
             else:
-                image, counter = InverseRadonTransform().get_partial_result(self.sinogram, self.tomograph,
+                image, counter = InverseRadonTransform().get_partial_result(sinogram_copy, self.tomograph,
                                                                             progres,
                                                                             partial_result[1].copy(),
                                                                             partial_result[2].copy(),

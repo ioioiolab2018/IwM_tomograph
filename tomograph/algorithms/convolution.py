@@ -2,7 +2,7 @@ class Convolution:
     def transform(self, image, mask=None):
         result = []
         if mask is None:
-            mask = [-1, 3, 1]
+            mask = [-3, 7, -3]
         for i in range(0, len(image)):
             result.append([])
             for j in range(1, (len(image[i]) - 1)):
