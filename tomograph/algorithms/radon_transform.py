@@ -1,23 +1,22 @@
-from bresenham import Bresenham
-from section import Section
-from point import Point
-from tomograph import Tomograph
+from tomograph import Point, Section
+from .bresenham import Bresenham
+from .ray_calculator import RayCalculator
 import math
 
 
 class RadonTransform:
-    def transform(self, image, tomograph: Tomograph):
-        iteration_no = math.floor(360 / tomograph.shifting_angle)
+    def transform(self, image, ray_calculator: RayCalculator):
+        iteration_no = math.floor(360 / ray_calculator.shifting_angle)
         sinogram = []
         for position_number in range(0, iteration_no):
-            sinogram_vector = self.get_singoram_vector(image, tomograph, position_number)
+            sinogram_vector = self.get_singoram_vector(image, ray_calculator, position_number)
             sinogram.append(sinogram_vector)
         return sinogram
 
-    def get_singoram_vector(self, image, tomograph: Tomograph, position_number):
+    def get_singoram_vector(self, image, ray_calculator: RayCalculator, position_number):
         sinogram_vector = []
-        for j in range(0, tomograph.detectors_quantity):
-            section = tomograph.get_ray(position_number, j)
+        for j in range(0, ray_calculator.detectors_quantity):
+            section = ray_calculator.get_ray(position_number, j)
             sinogram_vector.append(self.get_sinogram_value(image, section))
         return sinogram_vector
 
@@ -33,5 +32,5 @@ class RadonTransform:
         for point in points:
             points_sum += image[point.y][point.x]
         if len(points) > 0:
-            return points_sum / len(points)
+            return points_sum // len(points)
         return 0

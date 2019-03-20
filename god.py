@@ -1,10 +1,6 @@
-from tomograph import Tomograph
-from radon_transform import RadonTransform
-from inverse_radon_transform import InverseRadonTransform
-from skimage import color
-from skimage import io
+from tomograph import InverseRadonTransform, RadonTransform, RayCalculator
+from skimage import color, io, img_as_float32, img_as_ubyte
 import math
-import numpy as np
 
 
 class God:
@@ -25,10 +21,10 @@ class God:
         self.restart_result()
 
     def read_image(self, filename):
-        self.image = color.rgb2gray(io.imread(filename))
+        self.image = img_as_ubyte(color.rgb2gray(io.imread(filename)))
 
     def restart(self, n, alpha, arc_len):
-        self.tomograph = Tomograph(self.image.shape[0], self.image.shape[1], n, alpha, arc_len)
+        self.tomograph = RayCalculator(self.image.shape[0], self.image.shape[1], n, alpha, arc_len)
         self.iteration_no = math.floor(360 / alpha)
         self.result_n = -1
         self.sinogram_n = -1
@@ -46,15 +42,15 @@ class God:
         self.is_filtering = filtering
         self.restart_result()
 
-    def get_sinogram(self, progres):
-        if progres > self.sinogram_n:
-            for i in range(self.sinogram_n, progres):
+    def get_sinogram(self, progress):
+        if progress > self.sinogram_n:
+            for i in range(self.sinogram_n, progress):
                 self.sinogram.append(self.radon.get_singoram_vector(self.image, self.tomograph, i))
-            self.sinogram_n = progres
+            self.sinogram_n = progress
         result = []
-        for i in range(progres):
+        for i in range(progress):
             result.append(self.sinogram[i])
-        for i in range(progres, self.iteration_no - 1):
+        for i in range(progress, self.iteration_no - 1):
             result.append(self.zeros)
         return result
 
