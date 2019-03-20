@@ -6,6 +6,7 @@ import time
 import numpy as np
 from pydicom.data import get_testdata_files
 
+
 class DICOMSaver:
     def save(self, image: [[float]], filename: str, date: datetime = datetime.datetime.now(), comment: str = ''):
         full_path = os.path.dirname(os.path.abspath(__file__))
@@ -51,13 +52,17 @@ class DICOMSaver:
         ds.SeriesInstanceUID = '1.3.6.1.4.1.5962.1.3.1.1.20040119072730.12322'
         ds.SamplesPerPixel = 1
         ds.PhotometricInterpretation = "MONOCHROME2"
-        ds.Rows = pixel_array.shape[1]
+        ds.PixelRepresentation = 0
         ds.Columns = pixel_array.shape[0]
-        # ds.PixelSpacing
+        ds.Rows = pixel_array.shape[1]
+        ds.Width = pixel_array.shape[0]
+        ds.Height = pixel_array.shape[1]
+        ds.PixelSpacing = 1
+
         ds.BitsAllocated = 16
         ds.BitsStored = 16
         ds.HighBit = 15
-        ds.PixelRepresentation = 0
+
         # ds.PixelPaddingValue = -2000
         # ds.RescaleIntercept = -1024
         # ds.RescaleSlope = 1
@@ -65,19 +70,33 @@ class DICOMSaver:
         # ds.SecondaryCaptureDeviceManufctur = 'Python 2.7.3'
 
         # These are the necessary imaging components of the FileDataset object.
-        ds.SmallestImagePixelValue = b'\\x00\\x00'
-        ds.LargestImagePixelValue = b'\\xff\\xff'
+        # ds.SmallestImagePixelValue = b'\\x00\\x00'
+        # ds.LargestImagePixelValue = b'\\xff\\xff'
 
-        ds.Width = pixel_array.shape[0]
-        ds.Height = pixel_array.shape[1]
-
-        if pixel_array.dtype != np.uint16:
-            pixel_array = pixel_array.astype(np.uint16)
+        # if pixel_array.dtype != np.uint16:
+        #     pixel_array = pixel_array.astype(np.uint16)
         print(pixel_array)
+        print(max([max(sublist) for sublist in pixel_array]))
         ds.PixelData = pixel_array.tobytes()
 
-        ds.save_as(filename)
+        ds.save_as(filename + '.dcm')
 
         # t_ds = pydicom.dcmread('test.dcm')
         # print(t_ds)
         # return ds.pixel_array
+
+    def test(self, pixel_array, new_filename):
+        filename = get_testdata_files("CT_small.dcm")[0]
+        ds = pydicom.dcmread(filename)
+        ds.PhotometricInterpretation = "MONOCHROME2"
+        ds.PixelRepresentation = 0
+        ds.Columns = pixel_array.shape[0]
+        ds.Rows = pixel_array.shape[1]
+        ds.Width = pixel_array.shape[0]
+        ds.Height = pixel_array.shape[1]
+        ds.PixelData = pixel_array.tobytes()
+        ds.save_as(new_filename)
+
+        ds.BitsAllocated = 8
+        ds.BitsStored = 8
+        ds.HighBit = 7
