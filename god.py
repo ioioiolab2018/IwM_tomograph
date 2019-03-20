@@ -1,6 +1,5 @@
 from tomograph import InverseRadonTransform, RadonTransform, RayCalculator
-from skimage import color
-from skimage import io
+from skimage import color, io, img_as_float32, img_as_ubyte
 import math
 
 
@@ -22,7 +21,7 @@ class God:
         self.restart_result()
 
     def read_image(self, filename):
-        self.image = color.rgb2gray(io.imread(filename))
+        self.image = img_as_ubyte(color.rgb2gray(io.imread(filename)))
 
     def restart(self, n, alpha, arc_len):
         self.tomograph = RayCalculator(self.image.shape[0], self.image.shape[1], n, alpha, arc_len)

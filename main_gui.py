@@ -4,7 +4,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 from god import God
 from skimage.transform import resize
-from skimage.util import img_as_ubyte
+from skimage.util import img_as_float32
 from skimage.util import img_as_float
 import numpy as np
 from skimage import data
@@ -141,12 +141,14 @@ class Application(tk.Frame):
         self.image.configure(image=self.img)
 
     def show_sinogram(self, sinogram):
-        image = Image.fromarray(np.asarray(sinogram) * 255)
+        sinogram = resize(sinogram, (200, 400))
+        image = Image.fromarray(np.asarray(sinogram) )
         self.sin = ImageTk.PhotoImage(image)
         self.sinogram.configure(image=self.sin)
 
     def show_result_image(self, sinogram):
-        image = Image.fromarray(np.asarray(sinogram) * 255)
+        sinogram = resize(sinogram, (400, 400))
+        image = Image.fromarray(np.asarray(sinogram))
         self.res = ImageTk.PhotoImage(image)
         self.inverse_image.configure(image=self.res)
 
@@ -170,7 +172,6 @@ class Application(tk.Frame):
             self.progress.set((i / end) * 100)
             result = self.god.get_sinogram(i)
             result = np.transpose(result)
-            result = resize(result, (200, 400))
             self.show_sinogram(result)
             self.master.update()
         self.show_progress(0)
@@ -181,16 +182,10 @@ class Application(tk.Frame):
         if self.is_iterative.get() == 0:
             end = int(((self.inverse_slider.get()) / 100) * self.god.iteration_no)
 
-        for i in range(1, end):
+        for i in range(1, end, 10):
             self.progress.set((i / end) * 100)
             result = self.god.get_inverse_result(i)
             result = np.transpose(result)
-            # result=img_as_ubyte(result)
-            # print(np.min(result), np.max(result))
-            # p2 = np.percentile(result, 10)
-            # p98 = np.percentile(result, 99)
-            # result = exposure.rescale_intensity(result, in_range=(p2, p98))
-            # result = img_as_float(result)
             self.show_result_image(result)
             self.master.update()
         self.show_progress(0)
