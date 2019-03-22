@@ -5,10 +5,11 @@ import os
 import time
 import numpy as np
 from pydicom.data import get_testdata_files
+from tomograph import PatientInformation
 
 
 class DICOMSaver:
-    def save(self, image: [[float]], filename: str, date: datetime = datetime.datetime.now(), comment: str = ''):
+    def save(self, image: np.ndarray, filename: str, patient_info: PatientInformation):
         full_path = os.path.dirname(os.path.abspath(__file__))
 
         file_meta = Dataset()
@@ -18,50 +19,49 @@ class DICOMSaver:
 
         ds = FileDataset(full_path, {}, file_meta=file_meta, preamble=b"\0" * 128)
 
-        ds.PatientName = "Test^Name"
-        ds.PatientID = "00-000-000"
-
-        # Set the transfer syntax
-        # ds.file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRBigEndian
-        ds.is_little_endian = True
-        ds.is_implicit_VR = True
-
-        ds.ContentDate = date.strftime('%Y%m%d')
-        ds.ContentTime = date.strftime('%H%M%S.%f')
+        filename = self.__check_filename(filename)
+        self.__set_image_configuration(ds, image.shape[1], image.shape[0], image.max())
+        self.__set_patient_information(ds, patient_info)
+        self.__set_other_information_tags(ds)
 
         ds.PixelData = image.tobytes()
-        ds.save_as(filename + '.dcm')
+        ds.save_as(filename)
 
     def save_test(self, pixel_array, filename):
         full_path = os.path.dirname(os.path.abspath(__file__))
+        filename = self.__check_filename(filename)
 
-        file_meta = Dataset()
-        file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.2'  # 'Secondary Capture Image Storage'
-        file_meta.MediaStorageSOPInstanceUID = '1.2.3'
-        file_meta.ImplementationClassUID = '1.2.3.4'
-        ds = FileDataset(filename, {}, file_meta=file_meta, preamble=b"\0" * 128)
         filename_s = get_testdata_files("CT_small.dcm")[0]
         ds = pydicom.dcmread(filename_s)
+
+        # date = datetime.datetime.now()
+        #
+        # ds.ContentDate = date.strftime('%Y%m%d')
+        # ds.ContentTime = date.strftime('%H%M%S.%f')
 
         ds.SOPInstanceUID = '1.3.6.1.4.1.9590.100.1.1.111165684411017669021768385720736873780'
         ds.SOPClassUID = 'Secondary Capture Image Storage'
         ds.ContentDate = str(datetime.date.today()).replace('-', '')
         ds.ContentTime = str(time.time())  # milliseconds since the epoch
-        ds.Modality = 'CT'
         ds.StudyInstanceUID = '1.3.6.1.4.1.5962.1.2.1.20040119072730.12322'
         ds.SeriesInstanceUID = '1.3.6.1.4.1.5962.1.3.1.1.20040119072730.12322'
+        ds.Modality = 'CT'
         ds.SamplesPerPixel = 1
         ds.PhotometricInterpretation = "MONOCHROME2"
         ds.PixelRepresentation = 0
-        ds.Columns = pixel_array.shape[0]
-        ds.Rows = pixel_array.shape[1]
-        ds.Width = pixel_array.shape[0]
-        ds.Height = pixel_array.shape[1]
-        ds.PixelSpacing = 1
 
+        ds.Columns = pixel_array.shape[1]
+        ds.Rows = pixel_array.shape[0]
+        ds.Width = pixel_array.shape[1]
+        ds.Height = pixel_array.shape[0]
+
+        ds.PixelSpacing = 1
         ds.BitsAllocated = 16
         ds.BitsStored = 16
         ds.HighBit = 15
+
+        # ds.is_little_endian = True
+        # ds.is_implicit_VR = True
 
         # ds.PixelPaddingValue = -2000
         # ds.RescaleIntercept = -1024
@@ -79,7 +79,7 @@ class DICOMSaver:
         print(max([max(sublist) for sublist in pixel_array]))
         ds.PixelData = pixel_array.tobytes()
 
-        ds.save_as(filename + '.dcm')
+        ds.save_as(filename)
 
         # t_ds = pydicom.dcmread('test.dcm')
         # print(t_ds)
@@ -100,3 +100,64 @@ class DICOMSaver:
         ds.BitsAllocated = 8
         ds.BitsStored = 8
         ds.HighBit = 7
+
+    @staticmethod
+    def __check_filename(filename: str):
+        if '.dcm' not in filename:
+            filename += '.dcm'
+        return filename
+
+    @staticmethod
+    def __set_image_configuration(ds, width: int, height: int, largest_pixel_value: int):
+        ds.Modality = 'CT'
+        ds.SamplesPerPixel = 1
+        ds.PhotometricInterpretation = "MONOCHROME2"
+        ds.PixelRepresentation = 0
+
+        ds.Columns = width
+        ds.Rows = height
+        ds.Width = width
+        ds.Height = height
+
+        ds.PixelSpacing = 1
+        ds.BitsAllocated = 16
+        ds.BitsStored = 16
+        ds.HighBit = 15
+
+        # ds.PixelPaddingValue = '-2000'
+        # ds.RescaleIntercept = '-1024'
+        ds.RescaleSlope = 1
+
+        # ds.file_meta.TransferSyntaxUID = '1.2.840.10008.1.2.1'
+
+        # ds.is_little_endian = True
+        # ds.is_implicit_VR = True
+
+        # ds.SmallestImagePixelValue = 0
+        # ds.LargestImagePixelValue = largest_pixel_value
+
+        # ds.file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRBigEndian
+
+    @staticmethod
+    def __set_patient_information(ds: FileDataset, info: PatientInformation):
+        ds.PatientName = info.name + ' ' + info.surname
+        ds.PatientAge = str(info.age)
+        ds.PatientSex = info.sex
+        ds.PatientWeight = str(info.weight)
+        ds.AdditionalPatientHistory = info.comment
+
+        # ds.PatientName = "Test^Name"
+        # ds.PatientID = "00-000-000"
+        # ds.PatientBirthDate
+
+    @staticmethod
+    def __set_other_information_tags(ds: FileDataset):
+        date = datetime.datetime.now()
+
+        ds.ContentDate = date.strftime('%Y%m%d')
+        ds.ContentTime = date.strftime('%H%M%S.%f')
+        ds.SeriesInstanceUID = '1.3.6.1.4.1.5962.1.3.1.1.20040119072730.12322'
+        ds.SOPInstanceUID = '1.3.6.1.4.1.9590.100.1.1.111165684411017669021768385720736873780'
+        ds.SOPClassUID = 'Secondary Capture Image Storage'
+        ds.StudyInstanceUID = '1.3.6.1.4.1.5962.1.2.1.20040119072730.12322'
+        # ds.SecondaryCaptureDeviceManufctur = 'Python 2.7.3'
