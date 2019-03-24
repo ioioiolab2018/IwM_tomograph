@@ -4,6 +4,7 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 from god import God
 from skimage.transform import resize
+from dicom_saver_gui import  DicomWindow
 from skimage.util import img_as_float32
 from skimage.util import img_as_float
 import numpy as np
@@ -56,9 +57,14 @@ class Application(tk.Frame):
         self.sin = None
         self.res = None
         self.god = None
+        self.save_button = tk.Button(self.master, text="Save result in Dicom", command=self.onButton)
         self.create_widgets()
-        self.pack()
+
+        self.grid()
         self.update_variables()
+
+    def onButton(self):
+        self.child = DicomWindow(self.master)
 
     def create_widgets(self):
         # set variables
@@ -80,6 +86,9 @@ class Application(tk.Frame):
         self.choose_button["text"] = "Choose file"
         self.choose_button["command"] = self.choose_file
         self.choose_button.grid(row=0, column=2)
+
+        #Save diom button
+        self.save_button.grid(row=1, column=4, sticky=tk.E)
 
         # Filter checkbox
         self.cb_is_filter.grid(row=1, column=0)
