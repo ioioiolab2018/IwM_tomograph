@@ -12,12 +12,14 @@ class DICOMSaver:
     def save(self, image: np.ndarray, filename: str, patient_info: PatientInformation):
         full_path = os.path.dirname(os.path.abspath(__file__))
 
-        file_meta = Dataset()
-        file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.2'
-        file_meta.MediaStorageSOPInstanceUID = "1.2.3"
-        file_meta.ImplementationClassUID = "1.2.3.4"
-
-        ds = FileDataset(full_path, {}, file_meta=file_meta, preamble=b"\0" * 128)
+        # file_meta = Dataset()
+        # file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.2'
+        # file_meta.MediaStorageSOPInstanceUID = "1.2.3"
+        # file_meta.ImplementationClassUID = "1.2.3.4"
+        #
+        # ds = FileDataset(full_path, {}, file_meta=file_meta, preamble=b"\0" * 128)
+        filename_s = get_testdata_files("CT_small.dcm")[0]
+        ds = pydicom.dcmread(filename_s)
 
         filename = self.__check_filename(filename)
         self.__set_image_configuration(ds, image.shape[1], image.shape[0], image.max())
@@ -126,15 +128,14 @@ class DICOMSaver:
 
         # ds.PixelPaddingValue = '-2000'
         # ds.RescaleIntercept = '-1024'
-        ds.RescaleSlope = 1
+        # ds.RescaleSlope = 1
+        # ds.SmallestImagePixelValue = bytes(0)
+        # ds.LargestImagePixelValue = bytes(largest_pixel_value)
 
         # ds.file_meta.TransferSyntaxUID = '1.2.840.10008.1.2.1'
 
         # ds.is_little_endian = True
         # ds.is_implicit_VR = True
-
-        # ds.SmallestImagePixelValue = 0
-        # ds.LargestImagePixelValue = largest_pixel_value
 
         # ds.file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRBigEndian
 
