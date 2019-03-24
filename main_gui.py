@@ -4,17 +4,9 @@ from tkinter import ttk
 from PIL import ImageTk, Image
 from god import God
 from skimage.transform import resize
-from dicom_saver_gui import  DicomWindow
-from skimage.util import img_as_float32
-from skimage.util import img_as_float
-import numpy as np
-from skimage import data
-from skimage.util.dtype import dtype_range
-from skimage import exposure
-
-import matplotlib.pyplot as plt
 
 import numpy as np
+
 
 class Application(tk.Frame):
 
@@ -24,6 +16,9 @@ class Application(tk.Frame):
         master.title("Tomograph")
         master.resizable(width=True, height=True)
         self.master = master
+
+        self.max_sin_slider = 0
+        self.max_res_slideer = 0
 
         self.alpha_var = tk.StringVar()
         self.arc_len_var = tk.StringVar()
@@ -37,7 +32,7 @@ class Application(tk.Frame):
         self.is_iterative = tk.IntVar()
         self.progress = tk.IntVar()
 
-        self.filename = "images/Paski2.jpg"
+        self.filename = "images/Sin.png"
 
         self.run_button = tk.Button(self)
         self.run_inverse_button = tk.Button(self, state=tk.DISABLED)
@@ -45,26 +40,28 @@ class Application(tk.Frame):
         self.update_variables_button = tk.Button(self, text="Update Variables", command=self.update_variables)
 
         self.quit = tk.Button(self, text="QUIT", fg="red", command=self.master.destroy)
-        self.cb_is_filter = tk.Checkbutton(self, text="Use filtering", variable=self.is_filter)
+        self.cb_is_filter = tk.Checkbutton(self, text="Use filtering", variable=self.is_filter,
+                                           command=self.set_filtering)
         self.cb_is_iterative = tk.Checkbutton(self, text="Auto", variable=self.is_iterative,
                                               command=self.check_iterative)
         self.image = tk.Label(self)
+        self.image_label = tk.Label(self, text="Input Image")
+
         self.sinogram = tk.Label(self)
-        self.inverse_image = tk.Label(self)
+        self.sinogram_label = tk.Label(self, text="Sinogram")
+
+        self.result_image = tk.Label(self)
+        self.result_imageLabel = tk.Label(self, text="Result Image")
+
         self.transform_slider = tk.Scale(self, from_=0, to=100, orient=tk.HORIZONTAL, length=400)
         self.inverse_slider = tk.Scale(self, from_=0, to=100, orient=tk.HORIZONTAL, length=400)
         self.img = None
         self.sin = None
         self.res = None
         self.god = None
-        self.save_button = tk.Button(self.master, text="Save result in Dicom", command=self.onButton)
         self.create_widgets()
-
-        self.grid()
+        self.pack()
         self.update_variables()
-
-    def onButton(self):
-        self.child = DicomWindow(self.master)
 
     def create_widgets(self):
         # set variables
@@ -117,18 +114,28 @@ class Application(tk.Frame):
         self.inverse_slider.bind("<ButtonRelease-1>", self.run_inverse)
         # Start image
         self.show_image()
-        self.image.grid(row=6, column=0, columnspan=3)
+        self.image.grid(row=7, column=0, columnspan=3)
+        self.image_label.grid(row=6, column=0, columnspan=3)
 
-        self.sinogram.grid(row=6, column=4, sticky=tk.N)
-        self.inverse_image.grid(row=6, column=5, sticky=tk.N)
+        self.show_sinogram(np.zeros((200, 400)))
+        self.sinogram.grid(row=7, column=4, sticky=tk.N)
+        self.sinogram_label.grid(row=6, column=4)
+
+        self.show_result_image(np.zeros((200, 200)))
+        self.result_image.grid(row=7, column=5, sticky=tk.N)
+        self.result_imageLabel.grid(row=6, column=5)
 
         # Quit button
-        self.quit.grid(row=7, column=0, sticky=tk.E)
+        self.quit.grid(row=8, column=0, sticky=tk.E)
 
     def update_variables(self):
         alpha = 3
         n = 100
         arc_len = 180
+        self.inverse_slider.set(0)
+        self.max_res_slideer = 0
+        self.transform_slider.set(0)
+        self.max_sin_slider = 0
         try:
             alpha = float(self.alpha_var.get())
         except:
@@ -141,8 +148,10 @@ class Application(tk.Frame):
             arc_len = int(self.arc_len_var.get())
         except:
             print("zły format alpha")
-
+        self.show_sinogram(np.zeros((200, 400)))
+        self.show_result_image(np.zeros((200, 200)))
         self.god = God(self.filename, n, alpha, arc_len)
+        self.set_filtering()
 
     def show_image(self):
         image = Image.open(self.filename)
@@ -151,15 +160,16 @@ class Application(tk.Frame):
 
     def show_sinogram(self, sinogram):
         sinogram = resize(sinogram, (200, 400))
-        image = Image.fromarray(np.asarray(sinogram) )
+        image = Image.fromarray(np.asarray(sinogram))
         self.sin = ImageTk.PhotoImage(image)
         self.sinogram.configure(image=self.sin)
 
-    def show_result_image(self, sinogram):
-        sinogram = resize(sinogram, (400, 400))
-        image = Image.fromarray(np.asarray(sinogram))
+    def show_result_image(self, result_image):
+        if len(result_image) < 200:
+            result_image = resize(result_image, (400, 400))
+        image = Image.fromarray(np.asarray(result_image))
         self.res = ImageTk.PhotoImage(image)
-        self.inverse_image.configure(image=self.res)
+        self.result_image.configure(image=self.res)
 
     def show_progress(self, progress):
         self.progress.set(progress)
@@ -172,12 +182,23 @@ class Application(tk.Frame):
             self.transform_slider.grid(row=4, column=0, columnspan=3)
             self.inverse_slider.grid(row=5, column=0, columnspan=3)
 
+    def set_filtering(self):
+        self.inverse_slider.set(0)
+        self.max_res_slideer = 0
+        self.god.set_filtering(self.is_filter.get() == 1)
+        self.show_result_image(np.zeros((200, 200)))
+
     def run_transform(self, __=0):
+        start = 0
         end = self.god.iteration_no
         if self.is_iterative.get() == 0:
             end = int(((self.transform_slider.get()) / 100) * self.god.iteration_no)
+            if end < self.max_sin_slider:
+                start = end - 1
+            else:
+                self.max_sin_slider = end
 
-        for i in range(0, end):
+        for i in range(start, end):
             self.progress.set((i / end) * 100)
             result = self.god.get_sinogram(i)
             result = np.transpose(result)
@@ -188,10 +209,15 @@ class Application(tk.Frame):
 
     def run_inverse(self, __=0):
         end = self.god.iteration_no
+        start = 0
         if self.is_iterative.get() == 0:
             end = int(((self.inverse_slider.get()) / 100) * self.god.iteration_no)
+            if end < self.max_res_slideer:
+                start = end - 1
+            else:
+                self.max_res_slideer = end
 
-        for i in range(1, end, 10):
+        for i in range(start, end):
             self.progress.set((i / end) * 100)
             result = self.god.get_inverse_result(i)
             result = np.transpose(result)
