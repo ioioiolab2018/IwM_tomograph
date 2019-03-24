@@ -161,3 +161,15 @@ class DICOMSaver:
         ds.SOPClassUID = 'Secondary Capture Image Storage'
         ds.StudyInstanceUID = '1.3.6.1.4.1.5962.1.2.1.20040119072730.12322'
         # ds.SecondaryCaptureDeviceManufctur = 'Python 2.7.3'
+
+    def open(self, path: str):
+        ds = pydicom.dcmread(path)
+        patient_information = self.__get_patient_information(ds)
+        image = ds.pixel_array
+        return image, patient_information
+
+    @staticmethod
+    def __get_patient_information(ds: Dataset):
+        name, surname = ds.PatientName.split()
+        return PatientInformation(name, surname, ds.PatientAge, ds.PatientSex, ds.PatientWeight,
+                                  ds.AdditionalPatientHistory)
