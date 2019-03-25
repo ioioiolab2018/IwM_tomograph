@@ -3,7 +3,9 @@ from tkinter import filedialog
 from tkinter import ttk
 from PIL import ImageTk, Image
 from god import God
+from dicom_saver_gui import DicomWindow
 from skimage.transform import resize
+from skimage import  img_as_uint
 
 import numpy as np
 
@@ -13,6 +15,7 @@ class Application(tk.Frame):
     def __init__(self, master=None):
 
         super().__init__(master)
+        self.save_button = tk.Button(self, text="Save result as Dicom", command=self.saveDicom)
         master.title("Tomograph")
         master.resizable(width=True, height=True)
         self.master = master
@@ -35,7 +38,7 @@ class Application(tk.Frame):
         self.filename = "images/Sin.png"
 
         self.run_button = tk.Button(self)
-        self.run_inverse_button = tk.Button(self, state=tk.DISABLED)
+        self.run_inverse_button = tk.Button(self)
         self.choose_button = tk.Button(self)
         self.update_variables_button = tk.Button(self, text="Update Variables", command=self.update_variables)
 
@@ -84,7 +87,7 @@ class Application(tk.Frame):
         self.choose_button["command"] = self.choose_file
         self.choose_button.grid(row=0, column=2)
 
-        #Save diom button
+        # Save diom button
         self.save_button.grid(row=1, column=4, sticky=tk.E)
 
         # Filter checkbox
@@ -127,6 +130,9 @@ class Application(tk.Frame):
 
         # Quit button
         self.quit.grid(row=8, column=0, sticky=tk.E)
+
+    def saveDicom(self):
+        self.child = DicomWindow(self)
 
     def update_variables(self):
         alpha = 3
@@ -206,6 +212,9 @@ class Application(tk.Frame):
             self.master.update()
         self.show_progress(0)
         self.run_inverse_button.config(state="normal")
+
+    def getResult(self):
+        return img_as_uint(np.asarray(self.god.get_inverse_result(100), dtype=np.uint8))
 
     def run_inverse(self, __=0):
         end = self.god.iteration_no

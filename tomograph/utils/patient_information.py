@@ -14,3 +14,6 @@ class PatientInformation:
         self.sex = sex
         self.weight = weight
         self.comment = comment
+
+
+
