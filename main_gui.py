@@ -5,7 +5,8 @@ from PIL import ImageTk, Image
 from god import God
 from dicom_saver_gui import DicomWindow
 from skimage.transform import resize
-from skimage import  img_as_uint
+from skimage import  img_as_ubyte
+from skimage import img_as_uint
 
 import numpy as np
 
@@ -88,7 +89,7 @@ class Application(tk.Frame):
         self.choose_button.grid(row=0, column=2)
 
         # Save diom button
-        self.save_button.grid(row=1, column=4, sticky=tk.E)
+        self.save_button.grid(row=1, column=4, sticky=tk.W)
 
         # Filter checkbox
         self.cb_is_filter.grid(row=1, column=0)
@@ -165,8 +166,8 @@ class Application(tk.Frame):
         self.image.configure(image=self.img)
 
     def show_sinogram(self, sinogram):
-        sinogram = resize(sinogram, (200, 400))
-        image = Image.fromarray(np.asarray(sinogram))
+        sinogram = img_as_ubyte(resize(sinogram, (200, 400)))
+        image = Image.fromarray(sinogram)
         self.sin = ImageTk.PhotoImage(image)
         self.sinogram.configure(image=self.sin)
 
@@ -214,7 +215,7 @@ class Application(tk.Frame):
         self.run_inverse_button.config(state="normal")
 
     def getResult(self):
-        return img_as_uint(np.asarray(self.god.get_inverse_result(100), dtype=np.uint8))
+        return img_as_uint(np.asarray(self.god.get_inverse_result(self.god.iteration_no), dtype=np.uint8))
 
     def run_inverse(self, __=0):
         end = self.god.iteration_no

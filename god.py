@@ -1,7 +1,7 @@
 from tomograph import InverseRadonTransform, RadonTransform, RayCalculator, Convolution
 from skimage import color, io, img_as_float32, img_as_ubyte
 import math
-
+import numpy as np
 
 class God:
     tomograph = None
@@ -55,7 +55,7 @@ class God:
             result.append(self.sinogram[i])
         for i in range(progress, self.iteration_no - 1):
             result.append(self.zeros)
-        return result
+        return np.asarray(result, dtype=np.uint8)
 
     def filterImage(self, sinogram, mask=None):
         return Convolution().transform(sinogram, mask)
