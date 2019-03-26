@@ -1,7 +1,10 @@
+from skimage.exposure import exposure
+
 from tomograph import InverseRadonTransform, RadonTransform, RayCalculator, Convolution
 from skimage import color, io, img_as_float32, img_as_ubyte
 import math
 import numpy as np
+
 
 class God:
     tomograph = None
@@ -9,7 +12,7 @@ class God:
     iteration_no = None
     sinogram = None
     filtered_sinogram = None
-    image = None
+    image = np.zeros((2, 2))
     zeros = None
     radon = None
     is_filtering = None
@@ -62,10 +65,13 @@ class God:
 
     def get_inverse_result(self, progres: int):
 
+        sinogram_copy = None
+
         if self.sinogram_n < progres:
             self.get_sinogram(progres)
-
-        sinogram_copy = None
+            if self.is_filtering:
+                self.filtered_sinogram = self.filterImage(self.sinogram.copy())
+                sinogram_copy = self.filtered_sinogram
 
         if self.is_filtering:
             if self.filtered_sinogram is None:
@@ -83,7 +89,10 @@ class God:
                     is_done = True
                     break
         if is_done:
-            return InverseRadonTransform().normalize_image(partial_result[1], partial_result[2])
+            result = InverseRadonTransform().normalize_image(partial_result[1], partial_result[2])
+            p2, p98 = np.percentile(result, (5, 99))
+            return np.transpose(img_as_ubyte(exposure.rescale_intensity(result, in_range=(p2, p98))))
+
         else:
             if partial_result is None:
                 image, counter = InverseRadonTransform().get_partial_result(sinogram_copy, self.tomograph,
@@ -95,5 +104,8 @@ class God:
                                                                             partial_result[2].copy(),
                                                                             partial_result[0])
 
+            result = InverseRadonTransform().normalize_image(image, counter)
             self.results.append([progres, image, counter])
-            return InverseRadonTransform().normalize_image(image, counter)
+
+            p2, p98 = np.percentile(result, (5, 99))
+            return np.transpose(img_as_ubyte(exposure.rescale_intensity(result, in_range=(p2, p98))))

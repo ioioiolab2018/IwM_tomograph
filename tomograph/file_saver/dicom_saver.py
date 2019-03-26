@@ -166,11 +166,15 @@ class DICOMSaver:
     def open(self, path: str):
         ds = pydicom.dcmread(path)
         patient_information = self.__get_patient_information(ds)
-        image = ds.pixel_array
+        image = np.array(ds.pixel_array, dtype=np.uint8)
         return image, patient_information
 
     @staticmethod
     def __get_patient_information(ds: Dataset):
-        name, surname = ds.PatientName.split()
+        try:
+            name, surname = str(ds.PatientName).split()
+        except:
+            surname = str(ds.PatientName)
+            name = ""
         return PatientInformation(name, surname, ds.PatientAge, ds.PatientSex, ds.PatientWeight,
                                   ds.AdditionalPatientHistory)

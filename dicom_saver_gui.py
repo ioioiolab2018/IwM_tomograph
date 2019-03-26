@@ -4,7 +4,6 @@ from tomograph import PatientInformation
 from tomograph import DICOMSaver
 
 
-
 class DicomWindow(tk.Toplevel):
     def __init__(self, parent):
         tk.Toplevel.__init__(self, parent)
@@ -48,6 +47,7 @@ class DicomWindow(tk.Toplevel):
 
         self.save_button = tk.Button(self, text="Save", command=self.onButton).grid(column=0, row=7)
         self.save_button = tk.Button(self, text="Cancel", command=self.destroy).grid(column=1, row=7)
+        self.setVariables()
 
     def validate(self, action, index, value_if_allowed,
                  prior_value, text, validation_type, trigger_type, widget_name):
@@ -60,11 +60,17 @@ class DicomWindow(tk.Toplevel):
         else:
             return False
 
+    def setVariables(self):
+        self.filename.set("newFile")
+        self.name.set(self.parent.patient.name)
+        self.surname.set(self.parent.patient.surname)
+        self.age.set(self.parent.patient.age)
+        self.weight.set(self.parent.patient.weight)
+        self.sex.set(self.parent.patient.sex)
+        self.comment_text_box.insert(tk.END, self.parent.patient.comment)
+
     def onButton(self):
-        patient = PatientInformation(self.name.get(), self.surname.get(), self.age.get(), self.sex.get(),
-                                     self.weight.get(), self.comment_text_box.get("1.0", tk.END))
-        DICOMSaver().save(self.parent.getResult(), self.filename.get(), patient)
+        self.parent.patient = PatientInformation(self.name.get(), self.surname.get(), self.age.get(), self.sex.get(),
+                                                 self.weight.get(), self.comment_text_box.get("1.0", tk.END))
+        DICOMSaver().save(self.parent.get_result(), self.filename.get(), self.parent.patient)
         self.destroy()
-
-
-

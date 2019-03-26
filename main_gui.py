@@ -2,10 +2,14 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from PIL import ImageTk, Image
+from skimage.exposure import exposure
+from tomograph import PatientInformation
+from tomograph.file_saver import DICOMSaver
+
 from god import God
 from dicom_saver_gui import DicomWindow
 from skimage.transform import resize
-from skimage import  img_as_ubyte
+from skimage import img_as_ubyte, color
 from skimage import img_as_uint
 
 import numpy as np
@@ -41,6 +45,7 @@ class Application(tk.Frame):
         self.run_button = tk.Button(self)
         self.run_inverse_button = tk.Button(self)
         self.choose_button = tk.Button(self)
+        self.choose_dicom_button = tk.Button(self)
         self.update_variables_button = tk.Button(self, text="Update Variables", command=self.update_variables)
 
         self.quit = tk.Button(self, text="QUIT", fg="red", command=self.master.destroy)
@@ -62,7 +67,8 @@ class Application(tk.Frame):
         self.img = None
         self.sin = None
         self.res = None
-        self.god = None
+        self.god = God(self.filename, 2, 2, 2)
+        self.patient = PatientInformation()
         self.create_widgets()
         self.pack()
         self.update_variables()
@@ -88,7 +94,12 @@ class Application(tk.Frame):
         self.choose_button["command"] = self.choose_file
         self.choose_button.grid(row=0, column=2)
 
-        # Save diom button
+        # Choose dicom file button
+        self.choose_dicom_button["text"] = "Choose DICOM file"
+        self.choose_dicom_button["command"] = self.choose_dicom
+        self.choose_dicom_button.grid(row=0, column=4, sticky=tk.W)
+
+        # Save dicom button
         self.save_button.grid(row=1, column=4, sticky=tk.W)
 
         # Filter checkbox
@@ -171,9 +182,12 @@ class Application(tk.Frame):
         self.sin = ImageTk.PhotoImage(image)
         self.sinogram.configure(image=self.sin)
 
+    def medium_square_error(self, first_image, second_image):
+        return np.square(first_image - second_image).mean()
+
     def show_result_image(self, result_image):
         if len(result_image) < 200:
-            result_image = resize(result_image, (400, 400))
+            result_image = img_as_ubyte(resize(result_image, (400, 400)))
         image = Image.fromarray(np.asarray(result_image))
         self.res = ImageTk.PhotoImage(image)
         self.result_image.configure(image=self.res)
@@ -196,11 +210,11 @@ class Application(tk.Frame):
         self.show_result_image(np.zeros((200, 200)))
 
     def run_transform(self, __=0):
-        start = 0
+        start = 1
         end = self.god.iteration_no
         if self.is_iterative.get() == 0:
             end = int(((self.transform_slider.get()) / 100) * self.god.iteration_no)
-            if end < self.max_sin_slider:
+            if end <= self.max_sin_slider:
                 start = end - 1
             else:
                 self.max_sin_slider = end
@@ -212,9 +226,8 @@ class Application(tk.Frame):
             self.show_sinogram(result)
             self.master.update()
         self.show_progress(0)
-        self.run_inverse_button.config(state="normal")
 
-    def getResult(self):
+    def get_result(self):
         return img_as_uint(np.asarray(self.god.get_inverse_result(self.god.iteration_no), dtype=np.uint8))
 
     def run_inverse(self, __=0):
@@ -222,7 +235,7 @@ class Application(tk.Frame):
         start = 0
         if self.is_iterative.get() == 0:
             end = int(((self.inverse_slider.get()) / 100) * self.god.iteration_no)
-            if end < self.max_res_slideer:
+            if end <= self.max_res_slideer:
                 start = end - 1
             else:
                 self.max_res_slideer = end
@@ -230,7 +243,9 @@ class Application(tk.Frame):
         for i in range(start, end):
             self.progress.set((i / end) * 100)
             result = self.god.get_inverse_result(i)
-            result = np.transpose(result)
+
+            print(self.medium_square_error(result, self.god.image))
+
             self.show_result_image(result)
             self.master.update()
         self.show_progress(0)
@@ -242,6 +257,15 @@ class Application(tk.Frame):
         self.show_image()
         self.update_variables()
 
+    def choose_dicom(self):
+        name = filedialog.askopenfilename(initialdir="./", title="Select dicom file",
+                                                   filetypes=(("dicom files", "*.dcm"), ("png files", "*.png")))
+        image, self.patient = DICOMSaver().open(name)
+        im = Image.fromarray(image, mode="L")
+        im.save("TEMP.jpeg")
+        self.filename="TEMP.jpeg"
+        self.show_image()
+        self.update_variables()
 
 root = tk.Tk()
 app = Application(master=root)
