@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 
-class God:
+class Tomograph_service:
     tomograph = None
     sinogram_n = None
     iteration_no = None
@@ -90,8 +90,8 @@ class God:
                     break
         if is_done:
             result = InverseRadonTransform().normalize_image(partial_result[1], partial_result[2])
-            p2, p98 = np.percentile(result, (5, 99))
-            return np.transpose(img_as_ubyte(exposure.rescale_intensity(result, in_range=(p2, p98))))
+            p3, p98 = np.percentile(result, (5, 99))
+            return np.transpose(img_as_ubyte(exposure.rescale_intensity(result, in_range=(p3, p98))))
 
         else:
             if partial_result is None:
@@ -105,7 +105,9 @@ class God:
                                                                             partial_result[0])
 
             result = InverseRadonTransform().normalize_image(image, counter)
-            self.results.append([progres, image, counter])
 
-            p2, p98 = np.percentile(result, (5, 99))
-            return np.transpose(img_as_ubyte(exposure.rescale_intensity(result, in_range=(p2, p98))))
+            self.results.append([progres, image, counter])
+            result= np.array(result, dtype=np.uint8)
+            p3, p98 = np.percentile(result, (3, 98))
+
+            return np.transpose(img_as_ubyte(exposure.rescale_intensity(result, in_range=(p3,p98))))

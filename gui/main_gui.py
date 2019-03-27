@@ -2,14 +2,13 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
 from PIL import ImageTk, Image
-from skimage.exposure import exposure
 from tomograph import PatientInformation
 from tomograph.file_saver import DICOMSaver
 
-from god import God
-from dicom_saver_gui import DicomWindow
+from gui.tomograph_service import Tomograph_service
+from gui.dicom_saver_gui import DicomWindow
 from skimage.transform import resize
-from skimage import img_as_ubyte, color
+from skimage import img_as_ubyte
 from skimage import img_as_uint
 
 import numpy as np
@@ -67,7 +66,7 @@ class Application(tk.Frame):
         self.img = None
         self.sin = None
         self.res = None
-        self.god = God(self.filename, 2, 2, 2)
+        self.tomograph_service = Tomograph_service(self.filename, 2, 2, 2)
         self.patient = PatientInformation()
         self.create_widgets()
         self.pack()
@@ -168,7 +167,7 @@ class Application(tk.Frame):
             print("zły format alpha")
         self.show_sinogram(np.zeros((200, 400)))
         self.show_result_image(np.zeros((200, 200)))
-        self.god = God(self.filename, n, alpha, arc_len)
+        self.tomograph_service = Tomograph_service(self.filename, n, alpha, arc_len)
         self.set_filtering()
 
     def show_image(self):
@@ -206,14 +205,14 @@ class Application(tk.Frame):
     def set_filtering(self):
         self.inverse_slider.set(0)
         self.max_res_slideer = 0
-        self.god.set_filtering(self.is_filter.get() == 1)
+        self.tomograph_service.set_filtering(self.is_filter.get() == 1)
         self.show_result_image(np.zeros((200, 200)))
 
     def run_transform(self, __=0):
         start = 1
-        end = self.god.iteration_no
+        end = self.tomograph_service.iteration_no
         if self.is_iterative.get() == 0:
-            end = int(((self.transform_slider.get()) / 100) * self.god.iteration_no)
+            end = int(((self.transform_slider.get()) / 100) * self.tomograph_service.iteration_no)
             if end <= self.max_sin_slider:
                 start = end - 1
             else:
@@ -221,20 +220,20 @@ class Application(tk.Frame):
 
         for i in range(start, end):
             self.progress.set((i / end) * 100)
-            result = self.god.get_sinogram(i)
+            result = self.tomograph_service.get_sinogram(i)
             result = np.transpose(result)
             self.show_sinogram(result)
             self.master.update()
         self.show_progress(0)
 
     def get_result(self):
-        return img_as_uint(np.asarray(self.god.get_inverse_result(self.god.iteration_no), dtype=np.uint8))
+        return img_as_uint(np.asarray(self.tomograph_service.get_inverse_result(self.tomograph_service.iteration_no), dtype=np.uint8))
 
     def run_inverse(self, __=0):
-        end = self.god.iteration_no
+        end = self.tomograph_service.iteration_no
         start = 0
         if self.is_iterative.get() == 0:
-            end = int(((self.inverse_slider.get()) / 100) * self.god.iteration_no)
+            end = int(((self.inverse_slider.get()) / 100) * self.tomograph_service.iteration_no)
             if end <= self.max_res_slideer:
                 start = end - 1
             else:
@@ -242,10 +241,8 @@ class Application(tk.Frame):
 
         for i in range(start, end):
             self.progress.set((i / end) * 100)
-            result = self.god.get_inverse_result(i)
-
-            print(self.medium_square_error(result, self.god.image))
-
+            result = self.tomograph_service.get_inverse_result(i)
+            print(self.medium_square_error(result, self.tomograph_service.image))
             self.show_result_image(result)
             self.master.update()
         self.show_progress(0)
@@ -259,14 +256,15 @@ class Application(tk.Frame):
 
     def choose_dicom(self):
         name = filedialog.askopenfilename(initialdir="./", title="Select dicom file",
-                                                   filetypes=(("dicom files", "*.dcm"), ("png files", "*.png")))
+                                          filetypes=(("dicom files", "*.dcm"), ("png files", "*.png")))
         image, self.patient = DICOMSaver().open(name)
         im = Image.fromarray(image, mode="L")
         im.save("TEMP.jpeg")
-        self.filename="TEMP.jpeg"
+        self.filename = "TEMP.jpeg"
         self.show_image()
         self.update_variables()
 
-root = tk.Tk()
-app = Application(master=root)
-app.mainloop()
+def startAplication():
+    root = tk.Tk()
+    app = Application(master=root)
+    app.mainloop()
